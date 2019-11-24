@@ -1,0 +1,9 @@
+{
+  "python.pythonPath": "/Users/voiceup/.local/share/virtualenvs/mask-cgan-FhLee4AO/bin/python",
+  "python.linting.pylintEnabled": false,
+  "python.linting.flake8Enabled": true,
+  "python.linting.enabled": true,
+  "python.linting.flake8Args": [
+    "--ignore=E111,E114"
+  ]
+}
