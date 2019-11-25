@@ -88,6 +88,7 @@ def create_nets(opt):
 
 # Dataset loader
 def get_dataloader(opt):
+    # Remember to match with img_utils._transforms.
     transforms_ = [ transforms.Resize(opt.size, Image.BICUBIC),
                     transforms.ToTensor(),
                     transforms.Normalize([0.5], [0.5]) ]

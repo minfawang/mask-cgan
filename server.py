@@ -6,10 +6,14 @@ OR:
 $ python server.py
 """
 
-from flask import Flask, request, jsonify
 import os
 import torch
 import model.test as test_utils
+
+from flask import Flask, request, jsonify
+from flask_cors import CORS
+import img_utils
+
 
 # TODO: Load model. Set up a server to handle requests with custom inputs.
 # See the following URL for an example implementation:
@@ -37,23 +41,23 @@ def create_default_nets():
 
 # Globals.
 app = Flask(__name__)
+CORS(app)  # Cross origin resource sharing
 PORT = 5000
 nets = create_default_nets()
 print('Successfully loaded the nets')
 
 
-@app.route('/')
+@app.route('/', methods=['GET', 'POST'])
 def hello():
-  # name = request.args.get('name', 'World')
+  real_A_src = request.json['realASrc']
+  real_A = img_utils.dataUrl2Tensor(real_A_src)
 
-  # TODO: update mask and real_A values.
+  # TODO: update mask values.
   netG_A2B, netG_B2A = nets
   mask = torch.ones(1, 3, 128, 128)
-  real_A = torch.zeros(1, 3, 128, 128)
   fake_B = netG_A2B(real_A, mask=mask)
 
-  return jsonify(fake_B=list(fake_B.shape))
-  # return f'Hello, {escape(name)}!'
+  return jsonify(fakeBSrc=img_utils.tensor2DataUrl(fake_B))
 
 
 if __name__ == '__main__':
