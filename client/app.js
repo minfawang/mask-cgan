@@ -29,7 +29,6 @@ function postData(url = '', data = {}) {
 class App extends Component {
   state = {
     realASrc: DEFAULT_REAL_A_SRC,
-    realBSrc: '',
     response: '',
     fakeBSrc: '',
   };
@@ -59,18 +58,12 @@ class App extends Component {
     this.loadImage(e, 'realASrc');
   }
 
-  previewImageB = (e) => {
-    console.log('preview B');
-    this.loadImage(e, 'realBSrc');
-  }
-
   handleSubmit = (e) => {
     e.preventDefault();
 
-    const { realASrc, realBSrc } = this.state;
-    postData('http://127.0.0.1:5000', { realASrc, realBSrc })
+    const { realASrc } = this.state;
+    postData('http://127.0.0.1:5000', { realASrc })
       .then(res => {
-        console.log(res);
         res.json().then(json => {
           this.setState({
             response: json,
@@ -80,35 +73,48 @@ class App extends Component {
         window.myResponse = res;
       }, rej => console.log(rej));
   }
-  
-  render() {
+
+  renderFakeB() {
     return (
       <div>
+        <div>fakeB</div>
+        <img src={this.state.fakeBSrc} alt="fakeB" />
+      </div>
+    );
+  }
+
+  renderResponseDebug() {
+    return (
+      <div>
+        <br/>
+        <br/>
+        <br/>
+        <div>
+          <div>Response.json:</div>
+          <div>{JSON.stringify(this.state.response)}</div>
+        </div>
+      </div>
+    );
+  }
+  
+  render() {
+    const { realASrc, fakeBSrc, response } = this.state;
+
+    return (
+      <div className="container">
         <form onSubmit={this.handleSubmit}>
           <div className="form-group">
             <label htmlFor="image_a">Image A</label>
             <input type="file" className="form-control-file" id="image_a" onChange={this.previewImageA} />
-          </div>
-          <div className="form-group">
-            <label htmlFor="image_b">Image B</label>
-            <input type="file" className="form-control-file" id="image_b" onChange={this.previewImageB} />
+
+            <img src={realASrc} alt="image_a" />
           </div>
 
-          <button type="submit">Submit</button>
+          <button className="btn btn-primary" type="submit">Generate</button>
         </form>
 
-        <img src={this.state.realASrc} alt="image_a" />
-        <img src={this.state.realBSrc} alt="image_b" />
-
-        <div>
-          <div>fakeB</div>
-          <img src={this.state.fakeBSrc} alt="fakeB" />
-        </div>
-
-        <br/>
-        <br/>
-        <br/>
-        <div>{JSON.stringify(this.state.response)}</div>
+        {fakeBSrc && this.renderFakeB()}
+        {response && this.renderResponseDebug()}
       </div>
     );
   }
