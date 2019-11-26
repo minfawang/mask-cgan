@@ -1,12 +1,23 @@
 import React, { Component } from 'react';
 import 'bootstrap/dist/css/bootstrap.css';
 import {DEFAULT_REAL_A_SRC} from './consts';
+import Mask from './mask';
 
 function object2UrlParams(params) {
   return Object.keys(params).map((key) => {
       return encodeURIComponent(key) + '=' + encodeURIComponent(params[key])
   }).join('&');
 }
+
+
+function maskVal2Percent(val) {
+  return {
+    0: 0.5,
+    1: 0.8,
+    2: 1.0
+  }[val];
+}
+
 
 // Adapted from: https://developer.mozilla.org/en-US/docs/Web/API/Fetch_API/Using_Fetch
 function postData(url = '', data = {}) {
@@ -31,6 +42,7 @@ class App extends Component {
     realASrc: DEFAULT_REAL_A_SRC,
     response: '',
     fakeBSrc: '',
+    maskValue: 2,
   };
   
   loadImage = (event, stateKey) => {
@@ -58,11 +70,10 @@ class App extends Component {
     this.loadImage(e, 'realASrc');
   }
 
-  handleSubmit = (e) => {
-    e.preventDefault();
-
-    const { realASrc } = this.state;
-    postData('/generate', { realASrc })
+  generateImage = () => {
+    const { realASrc, maskValue } = this.state;
+    const maskPercent = maskVal2Percent(maskValue);
+    postData('/generate', { realASrc, maskPercent })
       .then(res => {
         res.json().then(json => {
           this.setState({
@@ -72,6 +83,16 @@ class App extends Component {
         });
         window.myResponse = res;
       }, rej => console.log(rej));
+  }
+
+  handleSubmit = (e) => {
+    e.preventDefault();
+    this.generateImage();
+  }
+
+  handleMaskChange = e => {
+    const maskValue = e.target.value;
+    this.setState({ maskValue }, this.generateImage);
   }
 
   renderFakeB() {
@@ -98,7 +119,9 @@ class App extends Component {
   }
   
   render() {
-    const { realASrc, fakeBSrc, response } = this.state;
+    const { realASrc, fakeBSrc, response, maskValue } = this.state;
+    const percent = maskVal2Percent(maskValue);
+    const percentStr = `${percent * 100} %`;
 
     return (
       <div className="container">
@@ -107,8 +130,13 @@ class App extends Component {
           <div className="form-group">
             <label htmlFor="image_a">Image A</label>
             <input type="file" className="form-control-file" id="image_a" onChange={this.previewImageA} />
-
             <img src={realASrc} alt="image_a" />
+          </div>
+
+          <div className="form-group col-md-4">
+            <label htmlFor="formControlRange">Mask percent: {percentStr}</label>
+            <input type="range" className="form-control-range custom-range" min={0} max={2} id="formControlRange" onChange={this.handleMaskChange} value={maskValue} />
+            <Mask percent={percent} />
           </div>
 
           <button className="btn btn-primary" type="submit">Generate</button>

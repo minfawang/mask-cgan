@@ -13,6 +13,7 @@ import model.test as test_utils
 from flask import Flask, jsonify, request, send_from_directory, send_file
 from flask_cors import CORS
 import img_utils
+import model.utils as model_utils
 
 
 # TODO: Load model. Set up a server to handle requests with custom inputs.
@@ -52,9 +53,10 @@ def handle_generate():
   real_A_src = request.json['realASrc']
   real_A = img_utils.dataUrl2Tensor(real_A_src)
 
-  # TODO: update mask values.
+  mask_percent = request.json['maskPercent']
+  mask = model_utils.gen_random_mask(str(mask_percent), shape=real_A.shape)
+
   netG_A2B, netG_B2A = nets
-  mask = torch.ones(1, 3, 128, 128)
   fake_B = netG_A2B(real_A, mask=mask)
 
   return jsonify(fakeBSrc=img_utils.tensor2DataUrl(fake_B))
