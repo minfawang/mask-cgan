@@ -50,16 +50,18 @@ print('Successfully loaded the nets')
 
 @app.route('/generate', methods=['GET', 'POST'])
 def handle_generate():
-  real_A_src = request.json['realASrc']
-  real_A = img_utils.dataUrl2Tensor(real_A_src)
+  real_src = request.json['realSrc']
+  is_a2b = request.json['isA2B']
+  real = img_utils.dataUrl2Tensor(real_src)
 
   mask_percent = request.json['maskPercent']
-  mask = model_utils.gen_random_mask(str(mask_percent), shape=real_A.shape)
+  mask = model_utils.gen_random_mask(str(mask_percent), shape=real.shape)
 
   netG_A2B, netG_B2A = nets
-  fake_B = netG_A2B(real_A, mask=mask)
+  netG = netG_A2B if is_a2b else netG_B2A
+  fake = netG(real, mask=mask)
 
-  return jsonify(fakeBSrc=img_utils.tensor2DataUrl(fake_B))
+  return jsonify(fakeSrc=img_utils.tensor2DataUrl(fake))
 
 
 @app.route('/')

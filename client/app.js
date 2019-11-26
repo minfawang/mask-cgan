@@ -39,10 +39,11 @@ function postData(url = '', data = {}) {
 
 class App extends Component {
   state = {
-    realASrc: DEFAULT_REAL_A_SRC,
+    realSrc: DEFAULT_REAL_A_SRC,
     response: '',
-    fakeBSrc: '',
+    fakeSrc: '',
     maskValue: 2,
+    isA2B: true,
   };
   
   loadImage = (event, stateKey) => {
@@ -65,20 +66,19 @@ class App extends Component {
   
   // Experimental class field syntax used to provide "this" context.
   // See this page: https://reactjs.org/docs/handling-events.html
-  previewImageA = (e) => {
-    console.log('preview A');
-    this.loadImage(e, 'realASrc');
+  previewImage = (e) => {
+    this.loadImage(e, 'realSrc');
   }
 
   generateImage = () => {
-    const { realASrc, maskValue } = this.state;
+    const { realSrc, maskValue, isA2B } = this.state;
     const maskPercent = maskVal2Percent(maskValue);
-    postData('/generate', { realASrc, maskPercent })
+    postData('http://localhost:5000/generate', { isA2B, realSrc, maskPercent })
       .then(res => {
         res.json().then(json => {
           this.setState({
             response: json,
-            fakeBSrc: json['fakeBSrc'],
+            fakeSrc: json['fakeSrc'],
           })
         });
         window.myResponse = res;
@@ -95,18 +95,20 @@ class App extends Component {
     this.setState({ maskValue }, this.generateImage);
   }
 
-  renderFakeB() {
+  renderFakeImage() {
+    const { isA2B } = this.state;
+    
     return (
-      <div>
-        <div>fakeB</div>
-        <img src={this.state.fakeBSrc} alt="fakeB" />
+      <div className="col-md-4">
+        <div style={{ minHeight: '70px' }}>fake {isA2B ? 'Zebra' : 'Horse'}</div>
+        <img src={this.state.fakeSrc} alt="fake_image" />
       </div>
     );
   }
 
   renderResponseDebug() {
     return (
-      <div>
+      <div style={{ overflowWrap: 'break-word' }}>
         <br/>
         <br/>
         <br/>
@@ -117,32 +119,60 @@ class App extends Component {
       </div>
     );
   }
+
+  setA2B = () => { this.setState({ isA2B: true }, this.generateImage); }
+  setB2A = () => { this.setState({ isA2B: false }, this.generateImage); }
+
+  renderA2BRadio() {
+    const { isA2B } = this.state;
+    return (
+      <React.Fragment>
+        <div className="custom-control custom-radio custom-control-inline">
+          <input type="radio" id="customRadioInline1" name="customRadioInline1" className="custom-control-input" checked={isA2B} onChange={this.setA2B} />
+          <label className="custom-control-label" htmlFor="customRadioInline1">Horse2Zebra</label>
+        </div>
+        <div className="custom-control custom-radio custom-control-inline">
+          <input type="radio" id="customRadioInline2" name="customRadioInline1" className="custom-control-input" checked={!isA2B} onChange={this.setB2A} />
+          <label className="custom-control-label" htmlFor="customRadioInline2">Zebra2Horse</label>
+        </div>
+      </React.Fragment>
+    );
+  }
   
   render() {
-    const { realASrc, fakeBSrc, response, maskValue } = this.state;
+    const { realSrc, fakeSrc, response, maskValue, isA2B } = this.state;
     const percent = maskVal2Percent(maskValue);
     const percentStr = `${percent * 100} %`;
 
     return (
       <div className="container">
-        <h1>Horse2Zebra</h1>
+        <h1>Horse vs. Zebra</h1>
         <form onSubmit={this.handleSubmit}>
-          <div className="form-group">
-            <label htmlFor="image_a">Image A</label>
-            <input type="file" className="form-control-file" id="image_a" onChange={this.previewImageA} />
-            <img src={realASrc} alt="image_a" />
-          </div>
+          {this.renderA2BRadio()}
 
-          <div className="form-group col-md-4">
-            <label htmlFor="formControlRange">Mask percent: {percentStr}</label>
-            <input type="range" className="form-control-range custom-range" min={0} max={2} id="formControlRange" onChange={this.handleMaskChange} value={maskValue} />
-            <Mask percent={percent} />
+          <br/>
+          <br/>
+
+          <div className="row">
+            <div className="form-group col-md-4">
+              <label htmlFor="image">{isA2B ? 'Horse' : 'Zebra'} Image</label>
+              <input type="file" className="form-control-file" id="image" onChange={this.previewImage} />
+              <img src={realSrc} alt="image" style={{maxWidth: '128px'}} />
+            </div>
+
+            <div className="form-group col-md-4">
+              <label htmlFor="formControlRange">Mask percent: {percentStr}</label>
+              <input type="range" className="form-control-range custom-range" min={0} max={2} id="formControlRange" onChange={this.handleMaskChange} value={maskValue} />
+              <Mask percent={percent} />
+            </div>
+
+            {fakeSrc && this.renderFakeImage()}
           </div>
+          
 
           <button className="btn btn-primary" type="submit">Generate</button>
         </form>
 
-        {fakeBSrc && this.renderFakeB()}
         {response && this.renderResponseDebug()}
       </div>
     );
