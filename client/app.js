@@ -183,9 +183,21 @@ class App extends Component {
       </div>
     );
   }
+
+  renderRealImage() {
+    const { realSrc, isA2B }  = this.state;
+    
+    return (
+      <div className="form-group col-md-4">
+        <label htmlFor="image">{isA2B ? 'Horse' : 'Zebra'} Image</label>
+        <input type="file" className="form-control-file" id="image" onChange={this.previewImage} />
+        <img src={realSrc} alt="image" style={{maxWidth: '128px'}} />
+      </div>
+    );
+  }
   
   render() {
-    const { realSrc, fakeSrc, response, isA2B } = this.state;
+    const { fakeSrc, response } = this.state;
 
     return (
       <div className="container">
@@ -197,12 +209,7 @@ class App extends Component {
           <br/>
 
           <div className="row">
-            <div className="form-group col-md-4">
-              <label htmlFor="image">{isA2B ? 'Horse' : 'Zebra'} Image</label>
-              <input type="file" className="form-control-file" id="image" onChange={this.previewImage} />
-              <img src={realSrc} alt="image" style={{maxWidth: '128px'}} />
-            </div>
-
+            {this.renderRealImage()}
             {this.renderMaskRadio()}
 
             {fakeSrc && this.renderFakeImage()}

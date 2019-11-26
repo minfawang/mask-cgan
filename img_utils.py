@@ -1,6 +1,8 @@
 import base64
+import glob
 import io
 import numpy as np
+import os
 import re
 import torch
 import torchvision
@@ -48,3 +50,21 @@ def tensor2DataUrl(batch_img_tensor: torch.Tensor) -> Text:
   torchvision.utils.save_image(image, buff, format='jpeg')
   b64_image = base64.b64encode(buff.getvalue()).decode('utf-8')
   return f'data:image/jpeg;base64,{b64_image}'
+
+
+if __name__ == '__main__':
+  """
+  export const DEFAULT_REAL_A_SRC = ['<src1>', '<src2>']
+  """
+  filepaths = sorted(glob.glob('model/datasets/horse2zebra/train/A/*.*'))
+  data_urls = []
+  for filepath in filepaths[:10]:
+    img_tensor = _transforms(Image.open(filepath))
+    batch_img_tensor = torch.unsqueeze(img_tensor, dim=0)
+    data_url = tensor2DataUrl(batch_img_tensor)
+    data_urls.append(data_url)
+
+  data_urls_str = '",\n"'.join(data_urls)
+  output = f'export const DEFAULT_REAL_A_SRCS = [{data_urls_str}]'
+  with open('client/default_real_a_srcs.js', 'w') as fout:
+    fout.write(output)
