@@ -44,6 +44,7 @@ class App extends Component {
     fakeSrc: '',
     maskValue: 2,
     isA2B: true,
+    loading: false,
   };
   
   loadImage = (event, stateKey) => {
@@ -73,16 +74,18 @@ class App extends Component {
   generateImage = () => {
     const { realSrc, maskValue, isA2B } = this.state;
     const maskPercent = maskVal2Percent(maskValue);
-    postData('http://localhost:5000/generate', { isA2B, realSrc, maskPercent })
+    postData('/generate', { isA2B, realSrc, maskPercent })
       .then(res => {
         res.json().then(json => {
           this.setState({
             response: json,
+            loading: false,
             fakeSrc: json['fakeSrc'],
           })
         });
         window.myResponse = res;
       }, rej => console.log(rej));
+    this.setState({ loading: true });
   }
 
   handleSubmit = (e) => {
@@ -96,11 +99,11 @@ class App extends Component {
   }
 
   renderFakeImage() {
-    const { isA2B } = this.state;
+    const { isA2B, loading } = this.state;
     
     return (
       <div className="col-md-4">
-        <div style={{ minHeight: '70px' }}>fake {isA2B ? 'Zebra' : 'Horse'}</div>
+        <div style={{ minHeight: '70px' }}>fake {isA2B ? 'Zebra' : 'Horse'} {loading && 'generating ...'}</div>
         <img src={this.state.fakeSrc} alt="fake_image" />
       </div>
     );
