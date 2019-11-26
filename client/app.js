@@ -141,11 +141,51 @@ class App extends Component {
       </React.Fragment>
     );
   }
-  
-  render() {
-    const { realSrc, fakeSrc, response, maskValue, isA2B } = this.state;
+
+  renderMaskRange() {
+    const { maskValue } = this.state;
     const percent = maskVal2Percent(maskValue);
     const percentStr = `${percent * 100} %`;
+
+    return (
+      <div className="form-group col-md-4">
+        <label htmlFor="formControlRange">Mask percent: {percentStr}</label>
+        <input type="range" className="form-control-range custom-range" min={0} max={2} id="formControlRange" onChange={this.handleMaskChange} value={maskValue} />
+        <Mask percent={percent} />
+      </div>
+    );
+  }
+
+  renderMaskRadio() {
+    const { maskValue } = this.state;
+    const percent = maskVal2Percent(maskValue);
+    const percentStr = `${percent * 100} %`;
+    return (
+      <div className="form-group col-md-4">
+        <label htmlFor="formControlRange">Mask percent: {percentStr}</label>
+
+        <div>
+          <div className="form-check form-check-inline">
+            <input className="form-check-input" type="radio" id="inlineradio1" value="0" checked={maskValue == '0'} onChange={this.handleMaskChange} />
+            <label className="form-check-label" htmlFor="inlineradio1">50%</label>
+          </div>
+          <div className="form-check form-check-inline">
+            <input className="form-check-input" type="radio" id="inlineradio2" value="1" checked={maskValue == '1'} onChange={this.handleMaskChange} />
+            <label className="form-check-label" htmlFor="inlineradio2">80%</label>
+          </div>
+          <div className="form-check form-check-inline">
+            <input className="form-check-input" type="radio" id="inlineradio3" value="2" checked={maskValue == '2'} onChange={this.handleMaskChange} />
+            <label className="form-check-label" htmlFor="inlineCheckbox3">100%</label>
+          </div>
+        </div>
+
+        <Mask percent={percent} />
+      </div>
+    );
+  }
+  
+  render() {
+    const { realSrc, fakeSrc, response, isA2B } = this.state;
 
     return (
       <div className="container">
@@ -163,11 +203,7 @@ class App extends Component {
               <img src={realSrc} alt="image" style={{maxWidth: '128px'}} />
             </div>
 
-            <div className="form-group col-md-4">
-              <label htmlFor="formControlRange">Mask percent: {percentStr}</label>
-              <input type="range" className="form-control-range custom-range" min={0} max={2} id="formControlRange" onChange={this.handleMaskChange} value={maskValue} />
-              <Mask percent={percent} />
-            </div>
+            {this.renderMaskRadio()}
 
             {fakeSrc && this.renderFakeImage()}
           </div>
