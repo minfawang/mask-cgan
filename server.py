@@ -10,7 +10,7 @@ import os
 import torch
 import model.test as test_utils
 
-from flask import Flask, request, jsonify
+from flask import Flask, jsonify, request, send_from_directory, send_file
 from flask_cors import CORS
 import img_utils
 
@@ -40,15 +40,15 @@ def create_default_nets():
 
 
 # Globals.
-app = Flask(__name__)
+app = Flask(__name__, static_folder='client/dist')
 CORS(app)  # Cross origin resource sharing
 PORT = 5000
 nets = create_default_nets()
 print('Successfully loaded the nets')
 
 
-@app.route('/', methods=['GET', 'POST'])
-def hello():
+@app.route('/generate', methods=['GET', 'POST'])
+def handle_generate():
   real_A_src = request.json['realASrc']
   real_A = img_utils.dataUrl2Tensor(real_A_src)
 
@@ -58,6 +58,17 @@ def hello():
   fake_B = netG_A2B(real_A, mask=mask)
 
   return jsonify(fakeBSrc=img_utils.tensor2DataUrl(fake_B))
+
+
+@app.route('/')
+def handle_home():
+  # return render_template('index.html')
+  return app.send_static_file('index.html')
+
+
+@app.route('/app<string:filename>')
+def handle_app(filename):
+  return app.send_static_file(f'app{filename}')
 
 
 if __name__ == '__main__':

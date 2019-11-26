@@ -13,6 +13,7 @@ import model.utils as model_utils
 # Remember to match with test.transforms.
 IMG_SIZE = 128
 _transforms = transforms.Compose([ transforms.Resize(IMG_SIZE, Image.BICUBIC),
+                                   transforms.RandomCrop(IMG_SIZE),
                                    transforms.ToTensor(),
                                    transforms.Normalize([0.5], [0.5]) ])
 

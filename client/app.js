@@ -62,7 +62,7 @@ class App extends Component {
     e.preventDefault();
 
     const { realASrc } = this.state;
-    postData('http://127.0.0.1:5000', { realASrc })
+    postData('/generate', { realASrc })
       .then(res => {
         res.json().then(json => {
           this.setState({
@@ -102,6 +102,7 @@ class App extends Component {
 
     return (
       <div className="container">
+        <h1>Horse2Zebra</h1>
         <form onSubmit={this.handleSubmit}>
           <div className="form-group">
             <label htmlFor="image_a">Image A</label>
