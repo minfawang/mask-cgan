@@ -5,6 +5,9 @@ Example command:
 python test.py \
     --run_id=horse2zebra_h64 \
     --max_n=100
+
+If you are also interested in getting the image grid, add the following flag:
+    --grid
 """
 
 import argparse
@@ -20,9 +23,9 @@ from torch.utils.data import DataLoader
 from torch.autograd import Variable
 import torch
 
-from .models import Generator
-from .datasets import ImageDataset
-from .utils import gen_random_mask, tensor2image
+from models import Generator
+from datasets import ImageDataset
+from utils import gen_random_mask, tensor2image
 
 parser = argparse.ArgumentParser()
 
@@ -30,6 +33,7 @@ parser = argparse.ArgumentParser()
 parser.add_argument('--run_id', type=str, default='default', help='run id to test on')
 parser.add_argument('--max_n', type=int, default=10, help='max number of outputs to generate')
 parser.add_argument('--root_dir', type=str, default='.', help='Root directory')
+parser.add_argument('--grid', type=bool, default=False, help='If true, output a grid directory')
 
 
 def update_opt(opt):
@@ -138,10 +142,19 @@ def gen_images(nets, dataloader, opt):
             save_image(fake_B, f'output/{opt.run_id}/B/{i+1:04d}.png')
             continue
 
+        mask_scales = opt.mask_scales.split(',')  # ['0.5', '0.8', '1.0']
         masks = [
-            gen_random_mask('0.5', shape=real_A.shape),
-            gen_random_mask('0.8', shape=real_A.shape),
-            gen_random_mask('1.0', shape=real_A.shape), ]
+            gen_random_mask(size, shape=real_A.shape)
+            for size in mask_scales]
+
+        for scale, mask in zip(mask_scales, masks):
+            fake_B = tensor2image(netG_A2B(real_A, mask=mask))
+            fake_A = tensor2image(netG_B2A(real_B, mask=mask))
+            save_image(fake_A, f'output/{opt.run_id}/A/scale={float(scale):.2f}/{i+1:04d}.png')
+            save_image(fake_B, f'output/{opt.run_id}/B/scale={float(scale):.2f}/{i+1:04d}.png')
+
+        if not opt.grid:
+            continue
 
         grid = [_vbound()]
         for mask in masks:
@@ -188,14 +201,17 @@ if __name__ == '__main__':
     opt = update_opt(opt)
 
     # Create output dirs if they don't exist
+    os.makedirs(f'output/{opt.run_id}/A', exist_ok=True)
+    os.makedirs(f'output/{opt.run_id}/B', exist_ok=True)
+
     if opt.use_mask:
-        if not os.path.exists(f'output/{opt.run_id}/grid'):
-            os.makedirs(f'output/{opt.run_id}/grid')
-    else:
-        if not os.path.exists(f'output/{opt.run_id}/A'):
-            os.makedirs(f'output/{opt.run_id}/A')
-        if not os.path.exists(f'output/{opt.run_id}/B'):
-            os.makedirs(f'output/{opt.run_id}/B')
+        mask_scales = [float(scale) for scale in opt.mask_scales.split(',')]
+        for scale in mask_scales:
+            os.makedirs(f'output/{opt.run_id}/A/scale={scale:.2f}', exist_ok=True)
+            os.makedirs(f'output/{opt.run_id}/B/scale={scale:.2f}', exist_ok=True)
+
+        if opt.grid:
+            os.makedirs(f'output/{opt.run_id}/grid', exist_ok=True)
 
     nets = create_nets(opt)
     dataloader = get_dataloader(opt)
