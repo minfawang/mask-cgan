@@ -1,0 +1,12 @@
+; DO NOT EDIT (unless you know what you are doing)
+;
+; This subdirectory is a git "subrepo", and this file is maintained by the
+; git-subrepo command. See https://github.com/git-commands/git-subrepo#readme
+;
+[subrepo]
+	remote = git@github.com:bioinf-jku/TTUR.git
+	branch = master
+	commit = c90b9b2f2af7fd80325bc5f2e6f5f1ff594d20e8
+	parent = 2f0c1d47ef217ea5cdab63c5b6236ef32d14d8fb
+	method = merge
+	cmdver = 0.4.0
