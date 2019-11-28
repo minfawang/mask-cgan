@@ -9,6 +9,7 @@ verify_ssl = true
 tensorflow = ">=1.15,<2.0"
 imageio = "*"
 scipy = "*"
+numpy = "*"
 
 [requires]
 python_version = "3.7"

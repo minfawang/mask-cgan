@@ -185,6 +185,17 @@ def calculate_activation_statistics(images, sess, batch_size=50, verbose=False):
 #------------------
 
 
+def _read_rgb(fn):
+    img_arr = imread(str(fn))
+
+    if len(img_arr.shape) == 2:
+        # Expand gray values to RGB channels.
+        img_arr = np.repeat(img_arr[:, :, np.newaxis], repeats=3, axis=2)
+    assert len(img_arr.shape) == 3
+    assert img_arr.shape[2] == 3
+    return img_arr.astype(np.float32)
+
+
 def load_image_batch(files):
     """Convenience method for batch-loading images
     Params:
@@ -192,7 +203,7 @@ def load_image_batch(files):
     Returns:
     -- A numpy array of dimensions (num_images,hi, wi, 3) representing the image pixel values.
     """
-    return np.array([imread(str(fn)).astype(np.float32) for fn in files])
+    return np.array([_read_rgb(fn) for fn in files])
 
 def get_activations_from_files(files, sess, batch_size=50, verbose=False):
     """Calculates the activations of the pool_3 layer for all images.
@@ -286,7 +297,7 @@ def _handle_path(path, sess, low_profile=False):
         if low_profile:
             m, s = calculate_activation_statistics_from_files(files, sess)
         else:
-            x = np.array([imread(str(fn)).astype(np.float32) for fn in files])
+            x = load_image_batch(files)
             m, s = calculate_activation_statistics(x, sess)
             del x #clean up memory
     return m, s
