@@ -19,6 +19,8 @@ tqdm = "*"
 tensorflow = "*"
 scipy = "*"
 flask-cors = "*"
+seaborn = "*"
+pandas = "*"
 
 [requires]
 python_version = "3.7"
