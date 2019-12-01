@@ -140,6 +140,8 @@ class Logger():
     ##########################
     # Draw images
     for image_name, tensor in images.items():
+      if tensor is None:
+        continue
       grid = torchvision.utils.make_grid(tensor2image(tensor))
       self.writer.add_image(image_name, grid, global_step=global_step)
 

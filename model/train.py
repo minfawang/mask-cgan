@@ -3,13 +3,16 @@ r"""
 Example invocation:
 
 python train.py \
-    --dataroot datasets/horse2zebra \
-    --run_id=p80mask_horse2zebra_h128_nres=3_simpled \
+    --dataroot datasets/monet2photo \
+    --run_id=p80mask_monet2photo_h128_nres=3_simpled \
     --size=128 \
     --n_res_blocks=3 \
     --simple_d=1 \
     --use_mask=1 \
     --mask_scales=''
+
+Using cuda:
+    --cuda
 
 # To use classic masking scheme
 python train.py \
@@ -96,6 +99,28 @@ def get_log_dir():
     log_dir = os.path.join(_run_dir, 'log/')
     os.makedirs(log_dir, exist_ok=True)
     return log_dir
+
+
+def compute_cycle_loss(recovered, real, mask=None):
+    if mask is None:
+        return criterion_cycle(recovered, real)
+
+    w_cycle_mask = 0.3
+    mask_loss = criterion_cycle(recovered * mask, real * mask)
+    context_loss = criterion_cycle(recovered * (1 - mask), real * (1 - mask))
+    return w_cycle_mask * mask_loss + (1.0 - w_cycle_mask) * context_loss
+
+
+def get_loss_D(fake, real, netD, fake_buffer):
+    # Real loss
+    pred_real = netD(real)
+    loss_D_real = criterion_GAN(pred_real, target_real)
+
+    # Fake loss
+    fake = fake_buffer.push_and_pop(fake)
+    pred_fake = netD(fake.detach())
+    loss_D_fake = criterion_GAN(pred_fake, target_fake)
+    return (loss_D_real + loss_D_fake) * 0.5
 
 
 # Load model checkpoints
@@ -230,16 +255,11 @@ for epoch in range(opt.epoch, opt.n_epochs):
             w_gan_mask * criterion_GAN(pred_fake_m, target_real))
 
         # Cycle loss
-        w_cycle_mask = 0.3 if opt.use_mask else 0.0
         recovered_A = netG_B2A(fake_B, mask=mask)
-        loss_cycle_ABA = 10.0 * (
-            (1.0 - w_cycle_mask) * criterion_cycle(recovered_A * (1 - mask), real_A * (1 - mask)) +
-            w_cycle_mask * criterion_cycle(recovered_A * mask, real_A * mask))
+        loss_cycle_ABA = 10.0 * compute_cycle_loss(recovered_A, real_A, mask=mask)
 
         recovered_B = netG_A2B(fake_A, mask=mask)
-        loss_cycle_BAB = 10.0 * (
-            (1.0 - w_cycle_mask) * criterion_cycle(recovered_B * (1 - mask), real_B * (1 - mask)) +
-            w_cycle_mask * criterion_cycle(recovered_B * mask, real_B * mask))
+        loss_cycle_BAB = 10.0 * compute_cycle_loss(recovered_B, real_B, mask=mask)
 
         # Total loss
         loss_G = (
@@ -253,20 +273,11 @@ for epoch in range(opt.epoch, opt.n_epochs):
         ###### Discriminator A ######
         optimizer_D_A.zero_grad()
 
-        def get_loss_D(fake, real, netD, fake_buffer):
-            # Real loss
-            pred_real = netD(real)
-            loss_D_real = criterion_GAN(pred_real, target_real)
-
-            # Fake loss
-            fake = fake_buffer.push_and_pop(fake)
-            pred_fake = netD(fake.detach())
-            loss_D_fake = criterion_GAN(pred_fake, target_fake)
-            return (loss_D_real + loss_D_fake) * 0.5
-
         # Total loss
         loss_D_A_full = (1.0 - w_gan_mask) * get_loss_D(fake_A, real_A, netD_A, fake_A_buffer)
-        loss_D_A_mask = w_gan_mask * get_loss_D(fake_A * mask, real_A * mask, netD_Am, fake_Am_buffer)
+        loss_D_A_mask = (
+            w_gan_mask * get_loss_D(fake_A * mask, real_A * mask, netD_Am, fake_Am_buffer)
+            if opt.use_mask else 0.0)
         loss_D_A = loss_D_A_full + loss_D_A_mask
         loss_D_A.backward()
 
@@ -278,7 +289,9 @@ for epoch in range(opt.epoch, opt.n_epochs):
 
         # Total loss
         loss_D_B_full = (1.0 - w_gan_mask) * get_loss_D(fake_B, real_B, netD_B, fake_B_buffer)
-        loss_D_B_mask = w_gan_mask * get_loss_D(fake_B * mask, real_B * mask, netD_Bm, fake_Bm_buffer)
+        loss_D_B_mask = w_gan_mask * (
+            get_loss_D(fake_B * mask, real_B * mask, netD_Bm, fake_Bm_buffer)
+            if opt.use_mask else 0.0)
         loss_D_B = loss_D_B_full + loss_D_B_mask
         loss_D_B.backward()
 
