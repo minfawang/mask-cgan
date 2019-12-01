@@ -215,7 +215,7 @@ def get_loss_D(fake, real, netD, fake_buffer):
 
 def compute_GAN_loss(fake, netD, mask=None, netDm=None):
     pred_fake = netD(fake)
-    if not mask:
+    if mask is None:
         return criterion_GAN(pred_fake, target_real)
 
     pred_fake_m = netDm(fake * mask)
