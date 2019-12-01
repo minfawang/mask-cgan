@@ -1,14 +1,21 @@
 #!/usr/bin/python3
-"""
+r"""
 Example invocation:
 
 python train.py \
-    --dataroot datasets/mnist2svhn \
-    --run_id=mask6_mnist2svhn_h32_nres=3_simpled \
-    --size=32 \
+    --dataroot datasets/horse2zebra \
+    --run_id=p80mask_horse2zebra_h128_nres=3_simpled \
+    --size=128 \
     --n_res_blocks=3 \
     --simple_d=1 \
-    --use_mask=1
+    --use_mask=1 \
+    --mask_scales=''
+
+# To use classic masking scheme
+python train.py \
+    --run_id=mask_... \
+    --use_mask=1 \
+    --mask_scales="0.5,0.8,1.0"
 """
 
 import argparse

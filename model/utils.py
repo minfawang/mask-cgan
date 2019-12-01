@@ -1,5 +1,6 @@
 import datetime
 import random
+import math
 import numpy as np
 import sys
 import time
@@ -13,6 +14,11 @@ from torch.utils.tensorboard import SummaryWriter
 def gen_random_mask(scales, shape):
   """Creates a mask of the specific shape.
 
+  Args:
+    scales: str or List[float]. If str, should be commad separated list of
+            floats.
+    shape: Tensor shape. Expected to be (batch, C, H, W).
+
   Uniformly sample a percent from [0.5, 0.8, 1.0]. There will be p * p of area
   that will be covered by the mask. For example, if in one draw, percent = 0.5,
   then there will be 0.5 * 0.5 = 0.25 percentage of area that will be covered.
@@ -22,14 +28,54 @@ def gen_random_mask(scales, shape):
   assert shape[1] in [1, 3], 'the image shape should have 1 or 3 channels.'
   assert shape[2] == shape[3]
   size = shape[2]
-  percent = random.choice([float(scale) for scale in scales.split(',')])
-  mid = size // 2
-
-  lo = int(mid - mid * percent)
-  hi = int(mid + mid * percent)
-
   mask = torch.zeros(*shape, requires_grad=False)
-  mask[:, :, lo:hi, lo:hi] = 1.0
+
+  if scales:
+    if type(scales) == str:
+      scales = [float(scale) for scale in scales.split(',')]
+    # Traditional masking scheme: put a mask at the center.
+    percent = random.choice(scales)
+    mid = size // 2
+
+    lo = int(mid - mid * percent)
+    hi = int(mid + mid * percent)
+
+    mask[:, :, lo:hi, lo:hi] = 1.0
+    return mask
+
+  ###########
+  # new mask generation scheme:
+  # - 20% chance full mask
+  # - 80% chance fancy-random
+  #   - total mask area percent >= 20%
+  #   - total rectangles >= random.randint(1, 4)
+  #   - each time, draw a random rectangle with size >= 0.15% of full size.
+
+  if random.random() < 0.2:
+    # 20% chance full mask.
+    mask[:, :, :, :] = 1.0
+    return mask
+
+  # 80% chance draw several rectangles.
+  MIN_RECT_SIZE_P = 0.15
+  mask_percent = 0.0
+  num_rectangles = random.randint(1, 4)
+  ns = 0
+  while ns < num_rectangles or mask_percent < 0.2:
+    ul_bound = int((1.0 - MIN_RECT_SIZE_P) * size)  # upper left bound
+    h1 = random.randint(0, ul_bound - 1)
+    w1 = random.randint(0, ul_bound - 1)
+
+    h_percent = random.uniform(MIN_RECT_SIZE_P, 1.0 - h1 / float(size))
+    w_percent = random.uniform(MIN_RECT_SIZE_P, 1.0 - w1 / float(size))
+
+    h2 = min(size, int(math.ceil(h1 + h_percent * size)))
+    w2 = min(size, int(math.ceil(w1 + w_percent * size)))
+
+    mask[:, :, h1:h2, w1:w2] = 1.0
+    ns += 1
+    mask_percent += h_percent * w_percent
+
   return mask
 
 
