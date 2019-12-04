@@ -1,10 +1,10 @@
 # Start
 
 ```bash
-nwb react run app.js --install
+nwb react run App.js --install
 
 # If you want to serve through ngrok, then use the command below:
-nwb react run app.js --install --devServer.disableHostCheck
+nwb react run App.js --install --devServer.disableHostCheck
 # And then start ngrok:
 ngrok http 3000
 # More resource about configuration:

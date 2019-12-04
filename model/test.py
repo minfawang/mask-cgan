@@ -23,6 +23,9 @@ from torch.utils.data import DataLoader
 from torch.autograd import Variable
 import torch
 
+import sys
+sys.path.append(os.path.dirname(os.path.realpath(__file__)))
+
 from models import Generator
 from datasets import ImageDataset
 from utils import gen_random_mask, tensor2image

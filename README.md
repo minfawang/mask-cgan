@@ -12,7 +12,7 @@ pipenv shell
 ## Start server
 
 ```bash
-nwb react build client/app.js client/dist/ --title MaskCycleGAN &&
+nwb react build client/App.js client/dist/ --title MaskCycleGAN &&
 env FLASK_APP=server.py flask run
 # Server will run at port 5000
 ```

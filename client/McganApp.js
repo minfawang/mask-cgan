@@ -73,8 +73,10 @@ class McganApp extends Component {
 
   generateImage = () => {
     const { realSrc, maskValue, isA2B } = this.state;
+    const { runId } = this.props;
+
     const maskPercent = maskVal2Percent(maskValue);
-    postData('/generate', { isA2B, realSrc, maskPercent })
+    postData(`/generate/${runId}`, { isA2B, realSrc, maskPercent })
       .then(res => {
         res.json().then(json => {
           this.setState({
