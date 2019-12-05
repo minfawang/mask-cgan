@@ -20,6 +20,14 @@ _transforms = transforms.Compose([ transforms.Resize(IMG_SIZE, Image.BICUBIC),
                                    transforms.Normalize([0.5], [0.5]) ])
 
 
+tensor2image = model_utils.tensor2image
+
+
+def path2Tensor(path: Text) -> torch.Tensor:
+  """Converts a file path to input tensor of generator."""
+  return _transforms(Image.open(path))
+
+
 def dataUrl2NpArr(url: Text) -> np.ndarray:
   """Converts a data_url string to np array.
 
@@ -45,9 +53,14 @@ def dataUrl2Tensor(url: Text) -> torch.Tensor:
 
 
 def tensor2DataUrl(batch_img_tensor: torch.Tensor) -> Text:
-  image = model_utils.tensor2image(batch_img_tensor)
+  """Input of this function is the output of generator -- unnormalized batch image tensor."""
+  return image2DataUrl(tensor2image(batch_img_tensor))
+
+
+def image2DataUrl(batch_img_tensor: torch.Tensor) -> Text:
+  """Input of this function is normalized batch image tensor."""
   buff = io.BytesIO()
-  torchvision.utils.save_image(image, buff, format='jpeg')
+  torchvision.utils.save_image(batch_img_tensor, buff, format='jpeg')
   b64_image = base64.b64encode(buff.getvalue()).decode('utf-8')
   return f'data:image/jpeg;base64,{b64_image}'
 

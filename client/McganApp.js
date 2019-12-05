@@ -14,7 +14,8 @@ function maskVal2Percent(val) {
   return {
     0: 0.5,
     1: 0.8,
-    2: 1.0
+    2: 1.0,
+    3: -1,  // Random: I feel lucky.
   }[val];
 }
 
@@ -43,8 +44,10 @@ class McganApp extends Component {
     response: '',
     fakeSrc: '',
     maskValue: 2,
+    maskSrc: '',  // If maskValue == 3 (I feel lucky), this mask may become the dataURL of the mask returned from server.
     isA2B: true,
     loading: false,
+    showDebug: false,
   };
   
   loadImage = (event, stateKey) => {
@@ -83,6 +86,7 @@ class McganApp extends Component {
             response: json,
             loading: false,
             fakeSrc: json['fakeSrc'],
+            maskSrc: json['maskSrc'],
           })
         });
         window.myResponse = res;
@@ -100,6 +104,11 @@ class McganApp extends Component {
     this.setState({ maskValue }, this.generateImage);
   }
 
+  toggleShowDebug = () => {
+    const { showDebug } = this.state;
+    this.setState({ showDebug: !showDebug });
+  }
+
   renderFakeImage() {
     const { isA2B, loading } = this.state;
     
@@ -112,21 +121,33 @@ class McganApp extends Component {
   }
 
   renderResponseDebug() {
+    const { showDebug } = this.state;
+    const responseView = (
+      <div>
+        <div>Response.json:</div>
+        <div>{JSON.stringify(this.state.response)}</div>
+      </div>
+    );
+    
     return (
       <div style={{ overflowWrap: 'break-word' }}>
         <br/>
         <br/>
         <br/>
-        <div>
-          <div>Response.json:</div>
-          <div>{JSON.stringify(this.state.response)}</div>
-        </div>
+        <button className="btn btn-light" onClick={this.toggleShowDebug}>
+          {showDebug ? 'Hide' : 'Show'} Debug
+        </button>
+        {showDebug && responseView}
       </div>
     );
   }
 
   setA2B = () => { this.setState({ isA2B: true }, this.generateImage); }
   setB2A = () => { this.setState({ isA2B: false }, this.generateImage); }
+
+  clickLucky = () => {
+    this.setState({ maskValue: 3 });
+  }
 
   renderA2BRadio() {
     const { isA2B } = this.state;
@@ -163,12 +184,11 @@ class McganApp extends Component {
   }
 
   renderMaskRadio() {
-    const { maskValue } = this.state;
+    const { maskValue, maskSrc } = this.state;
     const percent = maskVal2Percent(maskValue);
-    const percentStr = `${percent * 100} %`;
     return (
       <div className="form-group col-md-4">
-        <label htmlFor="formControlRange">Mask percent: {percentStr}</label>
+        <label htmlFor="formControlRange">Mask percent</label>
 
         <div>
           <div className="form-check form-check-inline">
@@ -183,9 +203,12 @@ class McganApp extends Component {
             <input className="form-check-input" type="radio" id="inlineradio3" value="2" checked={maskValue == '2'} onChange={this.handleMaskChange} />
             <label className="form-check-label" htmlFor="inlineCheckbox3">100%</label>
           </div>
+          <div>
+            <button className="btn btn-outline-success" onClick={this.clickLucky}>I feel lucky</button>
+          </div>
         </div>
 
-        <Mask percent={percent} />
+        <Mask percent={percent} src={maskSrc} />
       </div>
     );
   }
@@ -203,7 +226,7 @@ class McganApp extends Component {
   }
   
   render() {
-    const { fakeSrc, response } = this.state;
+    const { fakeSrc, loading } = this.state;
     const { left, right } = this.props;
     const title = `${left} vs. ${right}`;
 
@@ -222,12 +245,11 @@ class McganApp extends Component {
 
             {fakeSrc && this.renderFakeImage()}
           </div>
-          
 
-          <button className="btn btn-primary" type="submit">Generate</button>
+          <button className="btn btn-primary" type="submit" disabled={loading}>Generate</button>
         </form>
 
-        {response && this.renderResponseDebug()}
+        {this.renderResponseDebug()}
       </div>
     );
   }

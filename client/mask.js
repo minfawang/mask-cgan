@@ -9,8 +9,10 @@ const style = {
 export default class Mask extends Component {
   canvasRef = React.createRef();
 
-  drawMask = () => {
+  maybeDrawMask = () => {
     const { percent } = this.props;
+    if (percent < 0) { return; }
+    
     const canvas = this.canvasRef.current;
     const ctx = canvas.getContext('2d');
 
@@ -29,15 +31,28 @@ export default class Mask extends Component {
   }
 
   componentDidMount() {
-    this.drawMask();
+    this.maybeDrawMask();
   }
 
   componentDidUpdate() {
-    this.drawMask();
+    this.maybeDrawMask();
+  }
+  
+  renderMaskFromSrc() {
+    const { src } = this.props;
+    if (!src) {
+      return <div>Generating ...</div>;
+    }
+
+    return <img src={src} />;
   }
   
   render() {
     const { percent } = this.props;
+
+    if (percent < 0) {
+      return this.renderMaskFromSrc();
+    }
 
     return (
         <canvas ref={this.canvasRef} style={style}></canvas>
