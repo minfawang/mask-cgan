@@ -32,6 +32,10 @@ def load_all_nets(run_ids: List[Text]) -> Dict[Text, Nets]:
 # Globals.
 RUN_IDS = [
     'mask_horse2zebra_h128_nres=3_simpled',
+    'mask_monet2photo_h128_nres=3_simpled',
+    'mask_vangogh2photo_h128_nres=3_simpled',
+    'p80mask_horse2zebra_h128_nres=3_simpled',
+    'p80mask_vangogh2photo_h128_nres=3_simpled',
 ]
 
 app = Flask(__name__, static_folder='client/dist')
