@@ -65,6 +65,10 @@ def image2DataUrl(batch_img_tensor: torch.Tensor) -> Text:
   return f'data:image/jpeg;base64,{b64_image}'
 
 
+def path2DataUrl(path: Text) -> Text:
+  return tensor2DataUrl(path2Tensor(path))
+
+
 if __name__ == '__main__':
   """
   export const DEFAULT_REAL_A_SRC = ['<src1>', '<src2>']

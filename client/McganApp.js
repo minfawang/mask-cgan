@@ -40,7 +40,9 @@ function postData(url = '', data = {}) {
 
 class McganApp extends Component {
   state = {
-    realSrc: DEFAULT_REAL_A_SRC,
+    imgSrcs: {},  // { fileName: dataUrl }
+    // realSrc: DEFAULT_REAL_A_SRC,
+    realSrc: null,
     response: '',
     fakeSrc: '',
     maskValue: 2,
@@ -50,7 +52,9 @@ class McganApp extends Component {
     showDebug: false,
   };
   
-  loadImage = (event, stateKey) => {
+  // Experimental class field syntax used to provide "this" context.
+  // See this page: https://reactjs.org/docs/handling-events.html
+  previewImage = (e) => {
     const files = event.target.files;
     console.log('this.loadImage()');
     // input: target
@@ -61,17 +65,17 @@ class McganApp extends Component {
       reader.onload = e => {
         console.log('reader.onload()');
         const src = e.target.result;
-        this.setState({ [stateKey]: src });
+        this.setState({ realSrc: src, realSrcKey: null });
       }
       
       reader.readAsDataURL(files[0]);
     }
-  };
-  
-  // Experimental class field syntax used to provide "this" context.
-  // See this page: https://reactjs.org/docs/handling-events.html
-  previewImage = (e) => {
-    this.loadImage(e, 'realSrc');
+  }
+
+  updateRealSrcKey = (e) => {
+    const realSrcKey = e.currentTarget.id;
+    const realSrc = this.state.imgSrcs[realSrcKey];
+    this.setState({ realSrcKey, realSrc }, this.generateImage);
   }
 
   generateImage = () => {
@@ -79,7 +83,9 @@ class McganApp extends Component {
     const { runId } = this.props;
 
     const maskPercent = maskVal2Percent(maskValue);
-    postData(`/generate/${runId}`, { isA2B, realSrc, maskPercent })
+    const url = `/generate`;
+    console.log('posting to: ', url);
+    postData(url, { runId, isA2B, realSrc, maskPercent })
       .then(res => {
         res.json().then(json => {
           this.setState({
@@ -142,13 +148,41 @@ class McganApp extends Component {
     );
   }
 
-  setA2B = () => { this.setState({ isA2B: true }, this.generateImage); }
-  setB2A = () => { this.setState({ isA2B: false }, this.generateImage); }
+  setA2B = () => { this.setState({ isA2B: true }, this.fetchImgs); }
+  setB2A = () => { this.setState({ isA2B: false }, this.fetchImgs); }
 
   clickLucky = () => {
     this.setState({ maskValue: 3 });
   }
 
+  fetchImgs = (e) => {
+    if (!!e) {
+      e.preventDefault();
+    }
+    
+    const { left, right } = this.props;
+    const { isA2B } = this.state;
+    const side = isA2B ? 'A' : 'B';
+    const url = `/rand_imgs/${left}2${right}/${side}`;
+    
+    postData(url)
+      .then(res => {
+        res.json().then(json => {
+          const { imgSrcs } = json;
+          this.setState({ imgSrcs, realSrc: null, realSrcKey: null, response: json });
+        });
+      }, rej => console.log(rej));
+  }
+
+  //////////////////////////////////////////////////////////////
+  // Lifecycle methods
+  componentDidMount() {
+    this.fetchImgs();
+  }
+  
+  //////////////////////////////////////////////////////////////
+  // Render methods
+  
   renderA2BRadio() {
     const { isA2B } = this.state;
     const { left, right } = this.props;
@@ -212,21 +246,44 @@ class McganApp extends Component {
       </div>
     );
   }
-
+  
   renderRealImage() {
-    const { realSrc, isA2B }  = this.state;
+    const { realSrc, realSrcKey, imgSrcs, isA2B }  = this.state;
+
+    const randImgs = Object.keys(imgSrcs).map(key => {
+      const imgSrc = imgSrcs[key];
+      let style = {maxWidth: '128px'};
+      if (realSrcKey == key) {
+        style = { ...style, borderStyle: 'dashed', borderColor: 'red' };
+      }
+      
+      return <img src={imgSrc}
+                  id={key}
+                  key={key}
+                  alt="image"
+                  style={style}
+                  onClick={this.updateRealSrcKey}
+              />;
+    });
+    
+    const uploadedImg = (
+      <img src={realSrc} alt="image" style={{maxWidth: '128px'}} />
+    );
     
     return (
       <div className="form-group col-md-4">
         <label htmlFor="image">{isA2B ? 'Horse' : 'Zebra'} Image</label>
         <input type="file" className="form-control-file" id="image" onChange={this.previewImage} />
-        <img src={realSrc} alt="image" style={{maxWidth: '128px'}} />
+        {(!!realSrc && !realSrcKey) ? uploadedImg : randImgs}
+        <div>
+          <button className="btn btn-outline-success" onClick={this.fetchImgs}>Fetch random images</button>
+        </div>
       </div>
     );
   }
   
   render() {
-    const { fakeSrc, loading } = this.state;
+    const { realSrc, fakeSrc, loading } = this.state;
     const { left, right } = this.props;
     const title = `${left} vs. ${right}`;
 
@@ -245,8 +302,6 @@ class McganApp extends Component {
 
             {fakeSrc && this.renderFakeImage()}
           </div>
-
-          <button className="btn btn-primary" type="submit" disabled={loading}>Generate</button>
         </form>
 
         {this.renderResponseDebug()}

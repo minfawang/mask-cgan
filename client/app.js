@@ -64,7 +64,7 @@ export default class App extends Component {
       <div className="container">
         {this.renderRunDropdown()}
         <br />
-        <McganApp left={left} right={right} runId={runId} />
+        <McganApp key={runId} left={left} right={right} runId={runId} />
       </div>
     );
   }

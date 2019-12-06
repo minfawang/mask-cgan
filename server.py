@@ -9,13 +9,16 @@ Build client:
 nwb react build client/App.js client/dist/ --title MaskCycleGAN
 """
 
+import glob
+import img_utils
 import model.test as test_utils
+import model.utils as model_utils
+import random
+import os
 
 from flask import abort, Flask, jsonify, request
 from flask_cors import CORS
 from typing import Dict, List, Text
-import img_utils
-import model.utils as model_utils
 
 
 # Types
@@ -37,6 +40,7 @@ RUN_IDS = [
     'p80mask_horse2zebra_h128_nres=3_simpled',
     'p80mask_vangogh2photo_h128_nres=3_simpled',
 ]
+ROOT_DIR = os.path.dirname(os.path.realpath(__file__))
 
 app = Flask(__name__, static_folder='client/dist')
 CORS(app)  # Cross origin resource sharing
@@ -46,8 +50,9 @@ ALL_NETS = load_all_nets(RUN_IDS)
 print('Successfully loaded the nets')
 
 
-@app.route('/generate/<string:run_id>', methods=['GET', 'POST'])
-def handle_generate(run_id):
+@app.route('/generate', methods=['GET', 'POST'])
+def handle_generate():
+  run_id = request.json['runId']
   if run_id not in ALL_NETS:
     abort(404)
 
@@ -68,6 +73,25 @@ def handle_generate(run_id):
   return jsonify(
       fakeSrc=img_utils.tensor2DataUrl(fake),
       maskSrc=img_utils.image2DataUrl(mask))
+
+
+@app.route('/rand_imgs/<string:dataset>/<string:side>', methods=['GET', 'POST'])
+def handle_rand_imgs(dataset: Text, side: Text):
+  num_imgs = 5
+  side = side.upper()
+  if side not in ['A', 'B']:
+    abort(404)
+
+  img_dir = os.path.join(ROOT_DIR, f'model/datasets/{dataset}/train/{side}')
+  img_paths = glob.glob(os.path.join(img_dir, '*.*'))
+  img_paths = random.sample(img_paths, num_imgs)
+
+  img_srcs = {
+      os.path.basename(path): img_utils.path2DataUrl(path)
+      for path in img_paths
+  }
+
+  return jsonify(imgSrcs=img_srcs)
 
 
 @app.route('/')
