@@ -49,7 +49,7 @@ export default class App extends Component {
     
     return (
       <div>
-        Model: 
+        <h3>Choose Model</h3>
         <DropdownButton id="dropdown-basic-button" title={this.state.runId} style={dropdownStyle}>
         {runItems}
       </DropdownButton>
@@ -60,8 +60,26 @@ export default class App extends Component {
   render() {
     const { runId } = this.state;
     const [_, left, right] = findRunInfo(runId);
+
+    const instructionStyle = {
+      border: '2px',
+      borderStyle: 'solid',
+      color: '#888',
+    };
+    
     return (
       <div className="container">
+        <h1>Mask CycleGAN Demo</h1>
+        <div><a href="https://www.github.com/minfawang/mask-cgan">Source on Github</a></div>
+
+        <ul style={instructionStyle}>
+          <b>Instructions:</b>
+          <li>(optional) Choose a model</li>
+          <li>(optional) Choose a direction</li>
+          <li>Choose an image</li>
+          <li>(optional) Choose a mask</li>
+        </ul>
+        
         {this.renderRunDropdown()}
         <br />
         <McganApp key={runId} left={left} right={right} runId={runId} />

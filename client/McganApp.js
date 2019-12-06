@@ -82,6 +82,11 @@ class McganApp extends Component {
     const { realSrc, maskValue, isA2B } = this.state;
     const { runId } = this.props;
 
+    if (!realSrc) {
+      console.log('No realSrc. Skip generating image.');
+      return this.setState({ loading: false });
+    }
+
     const maskPercent = maskVal2Percent(maskValue);
     const url = `/generate`;
     console.log('posting to: ', url);
@@ -117,10 +122,11 @@ class McganApp extends Component {
 
   renderFakeImage() {
     const { isA2B, loading } = this.state;
+    const { left, right } = this.props;
     
     return (
       <div className="col-md-4">
-        <div style={{ minHeight: '70px' }}>fake {isA2B ? 'Zebra' : 'Horse'} {loading && 'generating ...'}</div>
+        <h3 style={{ minHeight: '70px' }}>Output: fake {isA2B ? right : left} {loading && 'generating ...'}</h3>
         <img src={this.state.fakeSrc} alt="fake_image" />
       </div>
     );
@@ -203,26 +209,13 @@ class McganApp extends Component {
     );
   }
 
-  renderMaskRange() {
-    const { maskValue } = this.state;
-    const percent = maskVal2Percent(maskValue);
-    const percentStr = `${percent * 100} %`;
-
-    return (
-      <div className="form-group col-md-4">
-        <label htmlFor="formControlRange">Mask percent: {percentStr}</label>
-        <input type="range" className="form-control-range custom-range" min={0} max={2} id="formControlRange" onChange={this.handleMaskChange} value={maskValue} />
-        <Mask percent={percent} />
-      </div>
-    );
-  }
-
   renderMaskRadio() {
     const { maskValue, maskSrc } = this.state;
     const percent = maskVal2Percent(maskValue);
     return (
       <div className="form-group col-md-4">
-        <label htmlFor="formControlRange">Mask percent</label>
+        <h3>Input: Mask</h3>
+        <div><b>Direction: </b> You can either choose a scale, or click "I feel lucky" to generate randomly.</div>
 
         <div>
           <div className="form-check form-check-inline">
@@ -249,6 +242,7 @@ class McganApp extends Component {
   
   renderRealImage() {
     const { realSrc, realSrcKey, imgSrcs, isA2B }  = this.state;
+    const { left, right } = this.props;
 
     const randImgs = Object.keys(imgSrcs).map(key => {
       const imgSrc = imgSrcs[key];
@@ -272,7 +266,8 @@ class McganApp extends Component {
     
     return (
       <div className="form-group col-md-4">
-        <label htmlFor="image">{isA2B ? 'Horse' : 'Zebra'} Image</label>
+        <h3>Input: {isA2B ? left : right} Image</h3>
+        <div><b>Direction: </b> You can either click on one of the example images, or upload your own.</div>
         <input type="file" className="form-control-file" id="image" onChange={this.previewImage} />
         {(!!realSrc && !realSrcKey) ? uploadedImg : randImgs}
         <div>
