@@ -29,7 +29,15 @@ sys.path.append(os.path.dirname(os.path.realpath(__file__)))
 from models import Generator
 from datasets import ImageDataset
 from utils import gen_random_mask, tensor2image
+from typing import Text, Tuple
 
+########
+# Type
+Nets = Tuple[torch.nn.Module, torch.nn.Module]
+
+
+########
+# Command line args
 parser = argparse.ArgumentParser()
 
 # If update arguments, please also remember to update create_default_net().
@@ -37,6 +45,17 @@ parser.add_argument('--run_id', type=str, default='default', help='run id to tes
 parser.add_argument('--max_n', type=int, default=10, help='max number of outputs to generate')
 parser.add_argument('--root_dir', type=str, default='.', help='Root directory')
 parser.add_argument('--grid', type=bool, default=False, help='If true, output a grid directory')
+
+
+def get_mask_scales(opt):
+    assert opt.use_mask, 'Tried to get mask scales for non-masked model'
+
+    mask_scales = [0.5, 0.8, 1.0]
+    if opt.mask_scales:
+        mask_scales = [float(scale) for scale in opt.mask_scales.split(',')]
+    else:
+        print('WARNING: random mask used in training. Set centered scales for testing.')
+    return mask_scales
 
 
 def update_opt(opt):
@@ -61,9 +80,32 @@ def update_opt(opt):
         print('WARNING: cuda is not available. Switch to CPU mode')
         opt.cuda = False
 
-    print('\n[NOTE] Currently in testing, --mask_scales are ignored. All outputs use the full mask.\n')
     print(opt)
 
+    return opt
+
+
+# TODO: Load model. Set up a server to handle requests with custom inputs.
+# See the following URL for an example implementation:
+# https://medium.com/datadriveninvestor/deploy-your-pytorch-model-to-production-f69460192217
+class DummyOption(object):
+    """Dummy Option object, created to just hold the option attributes."""
+    pass
+
+
+def create_default_nets(run_id: Text) -> Nets:
+    """Creates the net with default options."""
+    opt = get_default_option(run_id)
+    nets = create_nets(opt)
+    return nets
+
+
+def get_default_option(run_id: Text):
+    opt = DummyOption()
+    opt.run_id = run_id
+    opt.max_n = 1
+    opt.root_dir = os.path.dirname(os.path.realpath(__file__))
+    opt = update_opt(opt)
     return opt
 
 
@@ -127,6 +169,8 @@ def gen_images(nets, dataloader, opt):
     input_A = Tensor(opt.batchSize, opt.input_nc, opt.size, opt.size)
     input_B = Tensor(opt.batchSize, opt.output_nc, opt.size, opt.size)
 
+    mask_scales = [str(scale) for scale in get_mask_scales(opt)]  # ['0.5', '0.8', '1.0']
+
     total = min(len(dataloader), opt.max_n)
     for i, batch in tqdm(enumerate(dataloader), total=total):
         if i >= opt.max_n:
@@ -145,7 +189,6 @@ def gen_images(nets, dataloader, opt):
             save_image(fake_B, f'output/{opt.run_id}/B/{i+1:04d}.png')
             continue
 
-        mask_scales = opt.mask_scales.split(',')  # ['0.5', '0.8', '1.0']
         masks = [
             gen_random_mask(size, shape=real_A.shape)
             for size in mask_scales]
@@ -208,7 +251,8 @@ if __name__ == '__main__':
     os.makedirs(f'output/{opt.run_id}/B', exist_ok=True)
 
     if opt.use_mask:
-        mask_scales = [float(scale) for scale in opt.mask_scales.split(',')]
+        mask_scales = get_mask_scales(opt)
+
         for scale in mask_scales:
             os.makedirs(f'output/{opt.run_id}/A/scale={scale:.2f}', exist_ok=True)
             os.makedirs(f'output/{opt.run_id}/B/scale={scale:.2f}', exist_ok=True)
