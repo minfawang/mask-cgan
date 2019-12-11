@@ -13,7 +13,7 @@ import fid
 import os
 
 
-RUN_ID = 'mask_horse2zebra_h128_nres=3_simpled'
+RUN_ID = 'p80mask_horse2zebra_h128_nres=3_simpled'
 DATASET = 'horse2zebra'
 DIR_PATH = os.path.dirname(os.path.realpath(__file__))
 
